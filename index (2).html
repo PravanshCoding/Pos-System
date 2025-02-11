@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Grocery Store POS</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+    
+
+    <!-- Inventory Management Section -->
+    <div class="Products-section">
+        <h2>customer products Management</h2>
+        <input type="text" id="productName" placeholder="Product Name">
+        <input type="number" id="productPrice" placeholder="Price">
+        <input type="number" id="productStock" placeholder="Stock">
+        <button onclick="addProduct()">Add Product</button>
+        <ul id="inventoryList"></ul>
+    </div>
+
+    <!-- Billing Section -->
+    <div class="billing-section">
+        <h2>Billing</h2>
+        <select id="productSelect"></select>
+        <input type="number" id="productQty" placeholder="Quantity">
+        <button onclick="addToBill()">Add to Bill</button>
+        <ul id="billList"></ul>
+        <h3>Total: <span id="totalAmount">0</span> ₹</h3>
+        <button onclick="generateInvoice()">Generate Invoice</button>
+    </div>
+
+    <!-- Invoice Display -->
+    <div class="invoice-section">
+        <h2>Invoice</h2>
+        <pre id="invoiceOutput"></pre>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>

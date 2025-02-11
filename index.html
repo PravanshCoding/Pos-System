@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>POS System</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f4f4f9;
+      color: #333;
+      margin: 0;
+      padding: 20px;
+    }
+    h1 {
+      color: #4CAF50;
+    }
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+    .form-group {
+      margin-bottom: 15px;
+    }
+    .form-group label {
+      display: block;
+      margin-bottom: 5px;
+    }
+    .form-group input {
+      width: 100%;
+      padding: 8px;
+      box-sizing: border-box;
+    }
+    .btn {
+      background-color: #4CAF50;
+      color: white;
+      padding: 10px 15px;
+      border: none;
+      cursor: pointer;
+    }
+    .btn:hover {
+      background-color: #45a049;
+    }
+    .table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+    }
+    .table th, .table td {
+      border: 1px solid #ddd;
+      padding: 8px;
+      text-align: left;
+    }
+    .table th {
+      background-color: #4CAF50;
+      color: white;
+    }
+    .bill {
+      margin-top: 20px;
+      padding: 20px;
+      border: 1px solid #ddd;
+      background-color: #fff;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1><i class="fas fa-cash-register"></i> POS System</h1>
+
+    <!-- Product Management -->
+    <h2><i class="fas fa-box"></i> Add Product</h2>
+    <div class="form-group">
+      <label for="productName">Product Name</label>
+      <input type="text" id="productName" placeholder="Enter product name">
+    </div>
+    <div class="form-group">
+      <label for="productPrice">Price</label>
+      <input type="number" id="productPrice" placeholder="Enter price">
+    </div>
+    <div class="form-group">
+      <label for="productBarcode">Barcode</label>
+      <input type="text" id="productBarcode" placeholder="Enter barcode">
+    </div>
+    <div class="form-group">
+      <label for="productImage">Product Image URL</label>
+      <input type="text" id="productImage" placeholder="Enter image URL">
+    </div>
+    <div class="form-group">
+      <label for="productQuantity">Quantity</label>
+      <input type="number" id="productQuantity" placeholder="Enter quantity">
+    </div>
+    <button class="btn" onclick="addProduct()"><i class="fas fa-plus"></i> Add Product</button>
+
+    <!-- Inventory Display -->
+    <h2><i class="fas fa-warehouse"></i> Inventory</h2>
+    <table class="table" id="inventoryTable">
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Price</th>
+          <th>Barcode</th>
+          <th>Image</th>
+          <th>Quantity</th>
+        </tr>
+      </thead>
+      <tbody>
+        <!-- Rows will be added dynamically -->
+      </tbody>
+    </table>
+
+    <!-- Order Management -->
+    <h2><i class="fas fa-shopping-cart"></i> Create Order</h2>
+    <div class="form-group">
+      <label for="orderProduct">Select Product</label>
+      <select id="orderProduct">
+        <!-- Options will be added dynamically -->
+      </select>
+    </div>
+    <div class="form-group">
+      <label for="orderQuantity">Quantity</label>
+      <input type="number" id="orderQuantity" placeholder="Enter quantity">
+    </div>
+    <button class="btn" onclick="addToOrder()"><i class="fas fa-cart-plus"></i> Add to Order</button>
+
+    <!-- Order Display -->
+    <h2><i class="fas fa-receipt"></i> Current Order</h2>
+    <table class="table" id="orderTable">
+      <thead>
+        <tr>
+          <th>Product</th>
+          <th>Quantity</th>
+          <th>Price</th>
+          <th>Total</th>
+        </tr>
+      </thead>
+      <tbody>
+        <!-- Rows will be added dynamically -->
+      </tbody>
+    </table>
+    <button class="btn"><a href="index (2).html"><i class="fas fa-file-invoice"></i> Generate Bill</button>
+    <button class="btn" onclick="exportToExcel()"><i class="fas fa-file-excel"></i> Export to Excel</button>
+
+    <!-- Bill Display -->
+    <div class="bill" id="billContent" style="display: none;">
+      <h2><i class="fas fa-receipt"></i> Bill</h2>
+      <div id="billDetails"></div>
+      <button class="btn" onclick="downloadBill()"><i class="fas fa-download"></i> Download Bill as PDF</button>
+    </div>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.17.0/xlsx.full.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script>
+    const { jsPDF } = window.jspdf;
+
+    let inventory = [];
+    let currentOrder = [];
+
+    // Add Product
+    function addProduct() {
+      const name = document.getElementById('productName').value;
+      const price = parseFloat(document.getElementById('productPrice').value);
+      const barcode = document.getElementById('productBarcode').value;
+      const image = document.getElementById('productImage').value;
+      const quantity = parseInt(document.getElementById('productQuantity').value);
+
+      if (name && price && barcode && quantity) {
+        inventory.push({ name, price, barcode, image, quantity });
+        updateInventoryTable();
+        updateProductDropdown();
+        clearProductForm();
+      } else {
+        alert('Please fill all fields.');
+      }
+    }
+
+    // Update Inventory Table
+    function updateInventoryTable() {
+      const tbody = document.querySelector('#inventoryTable tbody');
+      tbody.innerHTML = '';
+      inventory.forEach(product => {
+        const row = `<tr>
+          <td>${product.name}</td>
+          <td>$${product.price.toFixed(2)}</td>
+          <td>${product.barcode}</td>
+          <td><img src="${product.image}" alt="${product.name}" width="50"></td>
+          <td>${product.quantity}</td>
+        </tr>`;
+        tbody.innerHTML += row;
+      });
+    }
+
+    // Update Product Dropdown
+    function updateProductDropdown() {
+      const select = document.getElementById('orderProduct');
+      select.innerHTML = '';
+      inventory.forEach((product, index) => {
+        const option = `<option value="${index}">${product.name} (${product.quantity} available)</option>`;
+        select.innerHTML += option;
+      });
+    }
+
+    // Clear Product Form
+    function clearProductForm() {
+      document.getElementById('productName').value = '';
+      document.getElementById('productPrice').value = '';
+      document.getElementById('productBarcode').value = '';
+      document.getElementById('productImage').value = '';
+      document.getElementById('productQuantity').value = '';
+    }
+
+    // Add to Order
+    function addToOrder() {
+      const productIndex = document.getElementById('orderProduct').value;
+      const quantity = parseInt(document.getElementById('orderQuantity').value);
+
+      if (quantity > 0 && inventory[productIndex].quantity >= quantity) {
+        const product = inventory[productIndex];
+        currentOrder.push({ ...product, orderQuantity: quantity });
+        inventory[productIndex].quantity -= quantity;
+        updateInventoryTable();
+        updateProductDropdown();
+        updateOrderTable();
+        document.getElementById('orderQuantity').value = '';
+      } else {
+        alert('Invalid quantity or insufficient stock.');
+      }
+    }
+
+    // Update Order Table
+    function updateOrderTable() {
+      const tbody = document.querySelector('#orderTable tbody');
+      tbody.innerHTML = '';
+      currentOrder.forEach(item => {
+        const total = item.price * item.orderQuantity;
+        const row = `<tr>
+          <td>${item.name}</td>
+          <td>${item.orderQuantity}</td>
+          <td>$${item.price.toFixed(2)}</td>
+          <td>$${total.toFixed(2)}</td>
+        </tr>`;
+        tbody.innerHTML += row;
+      });
+    }
+
+    // Generate Bill
+    function generateBill() {
+      const billDetails = document.getElementById('billDetails');
+      let billHTML = '<h3>Order Summary</h3>';
+      let totalAmount = 0;
+
+      currentOrder.forEach(item => {
+        const total = item.price * item.orderQuantity;
+        billHTML += `<a href="">{} - ${item.orderQuantity} x $${item.price.toFixed(2)} = $${total.toFixed(2)}</p>`;
+        totalAmount += total;
+      });
+
+      billHTML += `<h3>Total Amount: $${totalAmount.toFixed(2)}</h3>`;
+      billDetails.innerHTML = billHTML;
+      document.getElementById('billContent').style.display = 'block';
+    }
+
+    // Download Bill as PDF
+    function downloadBill() {
+      const doc = new jsPDF();
+      doc.text(document.getElementById('billDetails').innerText, 10, 10);
+      doc.save('bill.pdf');
+    }
+
+    // Export to Excel
+    function exportToExcel() {
+      const wsData = [
+        ['Product Name', 'Quantity', 'Price', 'Total']
+      ];
+      currentOrder.forEach(item => {
+        const total = item.price * item.orderQuantity;
+        wsData.push([item.name, item.orderQuantity, item.price, total]);
+      });
+
+      const ws = XLSX.utils.aoa_to_sheet(wsData);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, 'Orders');
+      XLSX.writeFile(wb, 'orders.xlsx');
+    }
+  </script>
+</body>
+</html>
